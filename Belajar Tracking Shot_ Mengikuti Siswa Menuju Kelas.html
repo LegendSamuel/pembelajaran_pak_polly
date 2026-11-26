@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Modul interaktif belajar tracking shot: mengikuti siswa menuju ruang kelas.">
+  <title>Tracking Shot · Belajar Sinematografi Interaktif</title>
+  <style>
+    /* ============================================================
+   TEMA & DASAR
+   ============================================================ */
+    :root {
+      --bg: #070b13;
+      --solid: #0f1624;
+      --solid2: #141d2e;
+      --panel: rgba(255, 255, 255, .045);
+      --panel2: rgba(255, 255, 255, .075);
+      --line: rgba(255, 255, 255, .11);
+      --line2: rgba(255, 255, 255, .2);
+      --ink: #eef3ff;
+      --mute: #9aa6bd;
+      --acc: #ff8a3d;
+      --acc2: #ffd166;
+      --acc3: #48d6ff;
+      --ok: #4ade80;
+      --okbg: rgba(74, 222, 128, .12);
+      --bad: #fb7185;
+      --badbg: rgba(251, 113, 133, .13);
+      --wall: #202b40;
+      --wall2: #131c2c;
+      --floor: #2b3549;
+      --locker: #3d5675;
+      --door: #a86a32;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .45);
+      --r: 22px;
+      --ease: cubic-bezier(.22, 1, .36, 1);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f4f1ea;
+      --solid: #ffffff;
+      --solid2: #f7f4ee;
+      --panel: rgba(255, 255, 255, .72);
+      --panel2: rgba(255, 255, 255, .95);
+      --line: rgba(24, 32, 52, .12);
+      --line2: rgba(24, 32, 52, .22);
+      --ink: #131a29;
+      --mute: #5d687e;
+      --acc: #e25822;
+      --acc2: #b45309;
+      --acc3: #0369a1;
+      --ok: #15803d;
+      --okbg: rgba(21, 128, 61, .1);
+      --bad: #c02643;
+      --badbg: rgba(192, 38, 67, .1);
+      --wall: #d8d2c4;
+      --wall2: #efeae0;
+      --floor: #c8bda8;
+      --locker: #8ba0bd;
+      --door: #a86a32;
+      --shadow: 0 20px 50px rgba(50, 40, 20, .12);
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 92px
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--bg);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -25%;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        radial-gradient(620px 620px at 12% 8%, rgba(255, 138, 61, .18), transparent 65%),
+        radial-gradient(700px 620px at 92% 18%, rgba(72, 214, 255, .13), transparent 65%),
+        radial-gradient(800px 700px at 50% 100%, rgba(255, 209, 102, .07), transparent 65%);
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: .35;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 64px 64px;
+      -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000, transparent 75%);
+      mask-image: radial-gradient(ellipse at 50% 0%, #000, transparent 75%);
+    }
+
+    @keyframes drift {
+      to {
+        transform: translate3d(3%, 2%, 0) scale(1.06)
+      }
+    }
+
+    ::selection {
+      background: var(--acc);
+      color: #0a0a0a
+    }
+
+    a {
+      color: inherit
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      color: inherit
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: .9em;
+      color: var(--acc2)
+    }
+
+    canvas {
+      display: block
+    }
+
+    /* ============================================================
+   PROGRES & NAVIGASI
+   ============================================================ */
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      z-index: 60;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--acc), var(--acc2), var(--acc3));
+      box-shadow: 0 0 18px rgba(255, 138, 61, .7)
+    }
+
+    .navwrap {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      -webkit-backdrop-filter: blur(18px);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line)
+    }
+
+    nav {
+      max-width: 1180px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      overflow-x: auto;
+      scrollbar-width: none
+    }
+
+    nav::-webkit-scrollbar {
+      display: none
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      font-size: 12px;
+      white-space: nowrap;
+      margin-right: 10px
+    }
+
+    .brand .mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      color: #170d05;
+      box-shadow: 0 6px 18px rgba(255, 138, 61, .35)
+    }
+
+    nav a {
+      white-space: nowrap;
+      text-decoration: none;
+      color: var(--mute);
+      font-size: 13px;
+      font-weight: 650;
+      padding: 7px 13px;
+      border-radius: 99px;
+      transition: .25s var(--ease)
+    }
+
+    nav a:hover {
+      color: var(--ink);
+      background: var(--panel)
+    }
+
+    nav a.on {
+      color: #160d04;
+      background: linear-gradient(120deg, var(--acc), var(--acc2));
+      box-shadow: 0 6px 20px rgba(255, 138, 61, .3)
+    }
+
+    .theme-btn {
+      margin-left: auto;
+      flex: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      transition: .25s var(--ease)
+    }
+
+    .theme-btn:hover {
+      transform: rotate(18deg) scale(1.08);
+      border-color: var(--acc)
+    }
+
+    /* ============================================================
+   HERO
+   ============================================================ */
+    header {
+      max-width: 1180px;
+      margin: auto;
+      padding: 66px 24px 24px;
+      display: grid;
+      grid-template-columns: 1.02fr .98fr;
+      gap: 46px;
+      align-items: center
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--acc2);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 7px 13px;
+      border-radius: 99px
+    }
+
+    .eyebrow i {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--acc);
+      box-shadow: 0 0 12px var(--acc);
+      animation: pulse 1.6s infinite
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .35;
+        transform: scale(.7)
+      }
+    }
+
+    h1 {
+      font-size: clamp(36px, 5.4vw, 66px);
+      line-height: 1.05;
+      letter-spacing: -.045em;
+      margin: 20px 0 16px;
+      font-weight: 850
+    }
+
+    h1 .grad {
+      background: linear-gradient(100deg, var(--acc), var(--acc2) 55%, var(--acc3));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent
+    }
+
+    .lead {
+      font-size: clamp(16px, 1.5vw, 18px);
+      color: var(--mute);
+      max-width: 560px;
+      margin: 0
+    }
+
+    .lead b {
+      color: var(--ink)
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 11px 19px;
+      font-weight: 750;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: linear-gradient(120deg, var(--acc), var(--acc2));
+      color: #1a0e04;
+      text-decoration: none;
+      transition: .28s var(--ease);
+      box-shadow: 0 10px 26px rgba(255, 138, 61, .22)
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 32px rgba(255, 138, 61, .32)
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(.97)
+    }
+
+    .btn.alt {
+      background: var(--panel);
+      color: var(--ink);
+      border-color: var(--line2);
+      box-shadow: none
+    }
+
+    .btn.alt:hover {
+      background: var(--panel2);
+      border-color: var(--acc)
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border-color: var(--line);
+      color: var(--mute);
+      box-shadow: none
+    }
+
+    .btn.sm {
+      padding: 8px 14px;
+      font-size: 13px
+    }
+
+    .btn.sel,
+    .seg button.sel {
+      outline: 2px solid var(--acc);
+      outline-offset: 2px
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line)
+    }
+
+    .stat b {
+      display: block;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 850;
+      color: var(--acc2)
+    }
+
+    .stat span {
+      font-size: 11px;
+      color: var(--mute);
+      letter-spacing: .06em;
+      text-transform: uppercase
+    }
+
+    /* Poster sinematik animasi */
+    .poster {
+      position: relative;
+      aspect-ratio: 1.18;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid var(--line2);
+      background: #0a101c;
+      box-shadow: var(--shadow), inset 0 0 60px rgba(0, 0, 0, .6)
+    }
+
+    .hall {
+      position: absolute;
+      inset: 0;
+      overflow: hidden
+    }
+
+    .plane {
+      position: absolute;
+      inset: 0
+    }
+
+    .plane.ceil {
+      background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .045) 0 2px, transparent 2px 58px), linear-gradient(#0d1524, #1a2538);
+      clip-path: polygon(0 0, 100% 0, 58% 46%, 42% 46%);
+      animation: hceil 5s linear infinite
+    }
+
+    .plane.floor {
+      background: repeating-linear-gradient(0deg, rgba(255, 209, 102, .09) 0 2px, transparent 2px 44px), linear-gradient(#1b2434, #0a101c);
+      clip-path: polygon(0 100%, 100% 100%, 58% 56%, 42% 56%);
+      animation: hfloor 2.4s linear infinite
+    }
+
+    .plane.left {
+      background: repeating-linear-gradient(90deg, #2a3d58 0 34px, #1a2a40 34px 40px);
+      clip-path: polygon(0 0, 42% 46%, 42% 56%, 0 100%);
+      animation: hwall 3.2s linear infinite
+    }
+
+    .plane.right {
+      background: repeating-linear-gradient(90deg, #1a2a40 0 34px, #2a3d58 34px 40px);
+      clip-path: polygon(100% 0, 58% 46%, 58% 56%, 100% 100%);
+      animation: hwall 3.2s linear infinite
+    }
+
+    @keyframes hceil {
+      to {
+        background-position: 90px 0, 0 0
+      }
+    }
+
+    @keyframes hfloor {
+      to {
+        background-position: 0 46px, 0 0
+      }
+    }
+
+    @keyframes hwall {
+      to {
+        background-position: -40px 0, 0 0
+      }
+    }
+
+    .door {
+      position: absolute;
+      left: 45.6%;
+      top: 39.5%;
+      width: 8.8%;
+      height: 17%;
+      border-radius: 3px 3px 0 0;
+      background: linear-gradient(160deg, #c98a49, #7a4b28);
+      box-shadow: 0 0 26px rgba(255, 209, 102, .5), inset 0 0 0 2px rgba(0, 0, 0, .25);
+      animation: doorPulse 5s ease-in-out infinite
+    }
+
+    .door span {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      color: var(--acc2);
+      white-space: nowrap
+    }
+
+    @keyframes doorPulse {
+      50% {
+        box-shadow: 0 0 42px rgba(255, 209, 102, .85), inset 0 0 0 2px rgba(0, 0, 0, .25)
+      }
+    }
+
+    .walker,
+    .camicon {
+      position: absolute;
+      left: 50%;
+      transform-origin: 50% 100%
+    }
+
+    .walker {
+      width: 30px;
+      height: 74px;
+      bottom: 27%;
+      animation: walk 5s var(--ease) infinite
+    }
+
+    .walker i {
+      position: absolute;
+      display: block
+    }
+
+    .walker .head {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #f0bd8b;
+      left: 8px;
+      top: 0;
+      box-shadow: 0 0 10px rgba(255, 209, 102, .3)
+    }
+
+    .walker .body {
+      width: 22px;
+      height: 34px;
+      left: 4px;
+      top: 15px;
+      border-radius: 7px 7px 4px 4px;
+      background: linear-gradient(#3b82f6, #1e40af)
+    }
+
+    .walker .bag {
+      width: 18px;
+      height: 22px;
+      left: -6px;
+      top: 20px;
+      border-radius: 5px;
+      background: #111827;
+      border: 1px solid #334155
+    }
+
+    .walker .leg {
+      width: 7px;
+      height: 25px;
+      top: 47px;
+      border-radius: 3px;
+      background: #1f2937
+    }
+
+    .walker .leg.l {
+      left: 6px;
+      animation: legA .5s ease-in-out infinite alternate
+    }
+
+    .walker .leg.r {
+      left: 17px;
+      animation: legB .5s ease-in-out infinite alternate
+    }
+
+    @keyframes legA {
+      to {
+        transform: rotate(22deg) translateY(-3px)
+      }
+    }
+
+    @keyframes legB {
+      to {
+        transform: rotate(-22deg) translateY(-3px)
+      }
+    }
+
+    @keyframes walk {
+      0% {
+        transform: translate(-50%, 0) scale(.45);
+        bottom: 33%;
+        opacity: .5
+      }
+
+      70% {
+        transform: translate(-50%, -4px) scale(1.12);
+        bottom: 23%;
+        opacity: 1
+      }
+
+      100% {
+        transform: translate(-50%, 0) scale(1.25);
+        bottom: 22%;
+        opacity: 1
+      }
+    }
+
+    .camicon {
+      width: 30px;
+      height: 22px;
+      bottom: 20%;
+      animation: camfollow 5s var(--ease) infinite
+    }
+
+    .camicon .b {
+      position: absolute;
+      inset: 0;
+      border-radius: 5px;
+      background: linear-gradient(#334155, #0f172a);
+      border: 1px solid #64748b
+    }
+
+    .camicon .l {
+      position: absolute;
+      right: -7px;
+      top: 5px;
+      width: 9px;
+      height: 12px;
+      border-radius: 4px;
+      background: #0b1220;
+      border: 2px solid #7dd3fc;
+      box-shadow: 0 0 12px #38bdf8
+    }
+
+    .camicon .r {
+      position: absolute;
+      left: 5px;
+      top: -6px;
+      width: 9px;
+      height: 7px;
+      border-radius: 3px;
+      background: #334155;
+      border: 1px solid #64748b
+    }
+
+    @keyframes camfollow {
+      0% {
+        transform: translate(-50%, 0) scale(.5);
+        bottom: 26%;
+        opacity: .45
+      }
+
+      72% {
+        transform: translate(-50%, 2px) scale(1.2);
+        bottom: 15%;
+        opacity: 1
+      }
+
+      100% {
+        transform: translate(-50%, 0) scale(1.35);
+        bottom: 14%;
+        opacity: 1
+      }
+    }
+
+    .beam {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .1) 48%, transparent 60%);
+      transform: translateX(-100%);
+      animation: sweep 6s ease-in-out infinite
+    }
+
+    @keyframes sweep {
+
+      60%,
+      100% {
+        transform: translateX(100%)
+      }
+    }
+
+    .grain {
+      position: absolute;
+      inset: -50%;
+      opacity: .07;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      animation: grain .35s steps(3) infinite
+    }
+
+    @keyframes grain {
+      0% {
+        transform: translate(0, 0)
+      }
+
+      33% {
+        transform: translate(-3%, 2%)
+      }
+
+      66% {
+        transform: translate(2%, -3%)
+      }
+    }
+
+    .hud {
+      position: absolute;
+      font: 700 10px/1.4 ui-monospace, Consolas, monospace;
+      letter-spacing: .12em;
+      color: #fff;
+      text-shadow: 0 2px 8px #000;
+      z-index: 2
+    }
+
+    .hud.tl {
+      left: 16px;
+      top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .hud .rec {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff3b52;
+      box-shadow: 0 0 10px #ff3b52;
+      animation: pulse 1s infinite
+    }
+
+    .hud.br {
+      right: 16px;
+      bottom: 14px;
+      color: #ffd166
+    }
+
+    .hud.bl {
+      left: 16px;
+      bottom: 14px;
+      color: #9fe8ff
+    }
+
+    .corners i {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, .55);
+      z-index: 2
+    }
+
+    .corners i:nth-child(1) {
+      left: 10px;
+      top: 10px;
+      border-right: 0;
+      border-bottom: 0
+    }
+
+    .corners i:nth-child(2) {
+      right: 10px;
+      top: 10px;
+      border-left: 0;
+      border-bottom: 0
+    }
+
+    .corners i:nth-child(3) {
+      left: 10px;
+      bottom: 10px;
+      border-right: 0;
+      border-top: 0
+    }
+
+    .corners i:nth-child(4) {
+      right: 10px;
+      bottom: 10px;
+      border-left: 0;
+      border-top: 0
+    }
+
+    .float-tag {
+      position: absolute;
+      z-index: 3;
+      background: color-mix(in srgb, var(--solid) 88%, transparent);
+      border: 1px solid var(--line2);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 9px 13px;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      animation: float 4s ease-in-out infinite
+    }
+
+    .float-tag.a {
+      left: -18px;
+      top: 24%;
+      color: var(--acc2)
+    }
+
+    .float-tag.b {
+      right: -14px;
+      bottom: 20%;
+      color: var(--acc3);
+      animation-delay: -2s
+    }
+
+    @keyframes float {
+      50% {
+        transform: translateY(-10px)
+      }
+    }
+
+    /* ============================================================
+   KONTEN & BAGIAN
+   ============================================================ */
+    main {
+      max-width: 1180px;
+      margin: auto
+    }
+
+    section {
+      padding: 64px 24px 8px;
+      scroll-margin-top: 90px
+    }
+
+    .sec-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 22px
+    }
+
+    .sec-num {
+      font-size: clamp(48px, 7vw, 82px);
+      font-weight: 900;
+      line-height: .8;
+      letter-spacing: -.06em;
+      color: transparent;
+      -webkit-text-stroke: 1px var(--line2);
+      flex: none
+    }
+
+    .sec-head h2 {
+      font-size: clamp(26px, 3.6vw, 40px);
+      line-height: 1.15;
+      letter-spacing: -.03em;
+      margin: 0 0 6px;
+      font-weight: 820
+    }
+
+    .sec-head p {
+      margin: 0;
+      color: var(--mute);
+      font-size: 15px;
+      max-width: 620px
+    }
+
+    .qchip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #180d04;
+      background: linear-gradient(120deg, var(--acc), var(--acc2));
+      padding: 5px 12px;
+      border-radius: 99px;
+      margin-bottom: 12px
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 22px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .12);
+      transition: border-color .3s, transform .35s var(--ease)
+    }
+
+    .card:hover {
+      border-color: var(--line2)
+    }
+
+    .card.case {
+      border-left: 3px solid var(--acc);
+      background: linear-gradient(110deg, rgba(255, 138, 61, .09), var(--panel) 55%)
+    }
+
+    .card b {
+      color: var(--ink)
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--mute);
+      margin: 6px 0 0
+    }
+
+    /* reveal on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity .7s var(--ease), transform .7s var(--ease);
+      transition-delay: var(--d, 0ms)
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: none
+    }
+
+    /* tombol tebak & jawaban */
+    .guess {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .answer {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      margin-top: 0;
+      transition: grid-template-rows .5s var(--ease), opacity .4s, margin .4s
+    }
+
+    .answer>.inner {
+      overflow: hidden
+    }
+
+    .answer.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      margin-top: 15px
+    }
+
+    .answer .box {
+      border: 1px solid rgba(74, 222, 128, .4);
+      background: var(--okbg);
+      border-radius: 16px;
+      padding: 16px 18px
+    }
+
+    .answer .box .lbl {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ok);
+      margin-bottom: 5px
+    }
+
+    .answer .box .arrow {
+      color: var(--acc2)
+    }
+
+    /* simulator */
+    .sim-card {
+      padding: 0;
+      overflow: hidden
+    }
+
+    .sim-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .sim-top .title {
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .sim-top .title i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--acc3);
+      box-shadow: 0 0 12px var(--acc3)
+    }
+
+    .seg {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--panel2)
+    }
+
+    .seg button {
+      border: 0;
+      background: transparent;
+      border-radius: 9px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--mute);
+      transition: .25s var(--ease)
+    }
+
+    .seg button.sel {
+      background: linear-gradient(120deg, var(--acc), var(--acc2));
+      color: #190e04;
+      box-shadow: 0 6px 16px rgba(255, 138, 61, .25)
+    }
+
+    .sim-screen {
+      position: relative;
+      margin: 18px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line2);
+      background: #070b12;
+      line-height: 0;
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, .6);
+      will-change: transform
+    }
+
+    .sim-screen canvas {
+      width: 100%;
+      height: auto;
+      transition: filter .25s
+    }
+
+    .sim-screen .scan {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 4px);
+      mix-blend-mode: overlay
+    }
+
+    .status {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0 18px 18px;
+      padding: 12px 15px;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 650;
+      transition: .35s var(--ease)
+    }
+
+    .status .ico {
+      flex: none;
+      font-size: 17px;
+      line-height: 1.2
+    }
+
+    .s-ok {
+      background: var(--okbg);
+      color: var(--ok);
+      border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent)
+    }
+
+    .s-bad {
+      background: var(--badbg);
+      color: var(--bad);
+      border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent)
+    }
+
+    .status.pop {
+      animation: pop .45s var(--ease)
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(.97)
+      }
+
+      55% {
+        transform: scale(1.02)
+      }
+    }
+
+    /* slider */
+    .slider-wrap {
+      padding: 18px 20px 4px
+    }
+
+    .slider-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 650
+    }
+
+    .slider-label b {
+      font-size: 22px;
+      color: var(--acc2);
+      font-variant-numeric: tabular-nums
+    }
+
+    .slider-wrap input[type=range] {
+      width: 100%;
+      margin: 14px 0 2px;
+      height: 8px;
+      appearance: none;
+      border-radius: 99px;
+      outline: none;
+      background: linear-gradient(90deg, var(--acc3) 0%, var(--ok) 37.5%, var(--bad) 100%);
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, .4)
+    }
+
+    .slider-wrap input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--solid);
+      border: 3px solid var(--acc2);
+      box-shadow: 0 0 0 5px rgba(255, 209, 102, .15), 0 4px 12px rgba(0, 0, 0, .4);
+      cursor: grab
+    }
+
+    .slider-wrap input[type=range]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--solid);
+      border: 3px solid var(--acc2);
+      cursor: grab
+    }
+
+    .scale {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--mute);
+      letter-spacing: .03em
+    }
+
+    /* langkah */
+    .timeline {
+      position: relative;
+      margin-top: 18px;
+      padding-left: 4px
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 23px;
+      top: 12px;
+      bottom: 12px;
+      width: 2px;
+      background: linear-gradient(var(--acc), var(--acc3), transparent)
+    }
+
+    .step {
+      position: relative;
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px 14px 12px;
+      margin: 10px 0;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--panel);
+      font-weight: 700;
+      transition: .3s var(--ease)
+    }
+
+    .step:hover {
+      transform: translateX(6px);
+      border-color: var(--acc)
+    }
+
+    .step .n {
+      position: relative;
+      z-index: 1;
+      flex: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      background: var(--solid2);
+      border: 1px solid var(--line2);
+      color: var(--acc2);
+      transition: .3s
+    }
+
+    .step.open {
+      background: linear-gradient(100deg, rgba(255, 138, 61, .1), var(--panel));
+      border-color: var(--acc)
+    }
+
+    .step.open .n {
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      color: #180d04;
+      border-color: transparent;
+      transform: rotate(-8deg)
+    }
+
+    .step .chev {
+      margin-left: auto;
+      color: var(--mute);
+      font-size: 12px;
+      transition: transform .3s
+    }
+
+    .step.open .chev {
+      transform: rotate(90deg);
+      color: var(--acc)
+    }
+
+    .panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows .45s var(--ease), opacity .3s, margin .3s;
+      margin: 0 0 0 52px
+    }
+
+    .panel>.inner {
+      overflow: hidden
+    }
+
+    .panel.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      margin: 6px 0 14px 52px
+    }
+
+    .panel .body {
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-left: 2px solid var(--acc);
+      border-radius: 0 14px 14px 0;
+      padding: 14px 16px;
+      font-size: 14.5px
+    }
+
+    .panel .why {
+      margin: 10px 0 0;
+      color: var(--mute)
+    }
+
+    .panel .why b {
+      color: var(--acc2)
+    }
+
+    /* kartu grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 16px
+    }
+
+    .eff {
+      position: relative;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 20px;
+      background: var(--panel);
+      overflow: hidden;
+      transition: .35s var(--ease)
+    }
+
+    .eff::after {
+      content: "";
+      position: absolute;
+      inset: auto -40% -70% auto;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 138, 61, .18), transparent 70%);
+      transition: .4s
+    }
+
+    .eff:hover {
+      transform: translateY(-7px);
+      border-color: var(--line2);
+      box-shadow: var(--shadow)
+    }
+
+    .eff.open {
+      border-color: var(--acc)
+    }
+
+    .eff.hot {
+      border-color: var(--bad);
+      background: var(--badbg)
+    }
+
+    .eff .ic {
+      font-size: 30px;
+      display: inline-block;
+      transition: .35s var(--ease)
+    }
+
+    .eff:hover .ic {
+      transform: scale(1.18) rotate(-8deg)
+    }
+
+    .eff.hot .ic {
+      animation: shakeIcon .45s infinite
+    }
+
+    @keyframes shakeIcon {
+      25% {
+        transform: translateX(-3px) rotate(-8deg)
+      }
+
+      75% {
+        transform: translateX(3px) rotate(8deg)
+      }
+    }
+
+    .eff b {
+      display: block;
+      margin-top: 8px;
+      font-size: 16px
+    }
+
+    .eff .eff-desc {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height .45s var(--ease), opacity .35s, margin .35s;
+      margin: 0;
+      font-size: 14px;
+      color: var(--mute)
+    }
+
+    .eff.open .eff-desc,
+    .eff.hot .eff-desc {
+      max-height: 220px;
+      opacity: 1;
+      margin-top: 8px
+    }
+
+    .eff .more {
+      position: absolute;
+      right: 18px;
+      top: 20px;
+      color: var(--mute);
+      font-size: 11px;
+      transition: .3s
+    }
+
+    .eff.open .more {
+      transform: rotate(90deg);
+      color: var(--acc)
+    }
+
+    /* kuis */
+    .qz {
+      border-top: 2px solid transparent;
+      background: linear-gradient(160deg, var(--panel2), var(--panel));
+      transition: .3s
+    }
+
+    .qz:hover {
+      border-top-color: var(--acc)
+    }
+
+    .qz .tag {
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--acc3)
+    }
+
+    .qz h3 {
+      font-size: 17px;
+      line-height: 1.45;
+      margin: 7px 0 14px
+    }
+
+    .opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 12px 15px;
+      margin: 9px 0;
+      background: var(--panel);
+      font-size: 14.5px;
+      transition: .25s var(--ease);
+      animation: slideIn .4s var(--ease) both
+    }
+
+    .opt:hover:not(:disabled) {
+      transform: translateX(5px);
+      border-color: var(--acc);
+      background: var(--panel2)
+    }
+
+    .opt .key {
+      flex: none;
+      width: 23px;
+      height: 23px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      color: var(--mute)
+    }
+
+    .opt.right {
+      background: var(--okbg);
+      border-color: var(--ok);
+      animation: correct .5s var(--ease)
+    }
+
+    .opt.wrong {
+      background: var(--badbg);
+      border-color: var(--bad);
+      animation: wrong .4s
+    }
+
+    .opt:disabled {
+      cursor: default;
+      opacity: .78
+    }
+
+    .opt.right:disabled,
+    .opt.wrong:disabled {
+      opacity: 1
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-12px)
+      }
+    }
+
+    @keyframes correct {
+      50% {
+        transform: scale(1.025);
+        box-shadow: 0 0 0 6px rgba(74, 222, 128, .12)
+      }
+    }
+
+    @keyframes wrong {
+      25% {
+        transform: translateX(-6px)
+      }
+
+      75% {
+        transform: translateX(6px)
+      }
+    }
+
+    .fb {
+      font-size: 14px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      margin: 8px 0 0;
+      animation: slideIn .4s var(--ease)
+    }
+
+    .fb.right {
+      background: var(--okbg);
+      color: var(--ok)
+    }
+
+    .fb.wrong {
+      background: var(--badbg);
+      color: var(--bad)
+    }
+
+    /* video */
+    .video-shell {
+      padding: 0;
+      overflow: hidden
+    }
+
+    .video-frame {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: #04060b;
+      overflow: hidden
+    }
+
+    .video-frame video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #04060b
+    }
+
+    .vph {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 2;
+      transition: .5s var(--ease);
+      background: radial-gradient(circle at 50% 45%, rgba(255, 138, 61, .16), transparent 60%),
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, .02) 0 2px, transparent 2px 12px), #080d17
+    }
+
+    .video-frame.has-video .vph {
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(1.03)
+    }
+
+    .vph-in {
+      max-width: 520px
+    }
+
+    .vph .play {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      font-size: 27px;
+      color: #180d04;
+      background: linear-gradient(135deg, var(--acc), var(--acc2));
+      box-shadow: 0 0 0 12px rgba(255, 138, 61, .1), 0 0 45px rgba(255, 138, 61, .4);
+      animation: pulseSoft 2.4s ease-in-out infinite
+    }
+
+    @keyframes pulseSoft {
+      50% {
+        box-shadow: 0 0 0 22px rgba(255, 138, 61, .04), 0 0 60px rgba(255, 138, 61, .55);
+        transform: scale(1.05)
+      }
+    }
+
+    .vph h3 {
+      margin: 0 0 7px;
+      font-size: clamp(19px, 2.5vw, 27px)
+    }
+
+    .vph p {
+      margin: 0 0 18px;
+      color: var(--mute);
+      font-size: 14px
+    }
+
+    .vph .row {
+      justify-content: center
+    }
+
+    .chapters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--line)
+    }
+
+    .chapters a,
+    .chapters button {
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border-radius: 99px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--mute);
+      transition: .25s var(--ease)
+    }
+
+    .chapters a:hover,
+    .chapters button:hover {
+      color: var(--acc2);
+      border-color: var(--acc);
+      transform: translateY(-2px)
+    }
+
+    .video-note {
+      font-size: 13px;
+      color: var(--mute);
+      padding: 0 20px 18px;
+      margin: 0
+    }
+
+    .drop-hint {
+      position: absolute;
+      inset: 12px;
+      border: 2px dashed var(--acc);
+      border-radius: 16px;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      background: rgba(8, 13, 23, .88);
+      font-weight: 800;
+      color: var(--acc2);
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s
+    }
+
+    .video-frame.drag .drop-hint {
+      opacity: 1
+    }
+
+    /* rangkuman */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center
+    }
+
+    .sum li {
+      margin: 11px 0;
+      padding-left: 8px;
+      transition: .3s
+    }
+
+    .sum li::marker {
+      color: var(--acc)
+    }
+
+    .sum li b {
+      color: var(--acc2)
+    }
+
+    .scorebox {
+      text-align: center;
+      min-width: 190px
+    }
+
+    .ring {
+      --p: 0;
+      width: 132px;
+      height: 132px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      position: relative;
+      background: conic-gradient(var(--acc) calc(var(--p) * 1%), var(--panel2) 0);
+      transition: background .8s var(--ease);
+      filter: drop-shadow(0 10px 24px rgba(255, 138, 61, .22))
+    }
+
+    .ring::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: var(--solid)
+    }
+
+    .ring .rv {
+      position: relative;
+      font-size: 31px;
+      font-weight: 900;
+      letter-spacing: -.03em
+    }
+
+    .ring .rv small {
+      font-size: 14px;
+      color: var(--mute);
+      font-weight: 700
+    }
+
+    #scoremsg {
+      font-size: 13px;
+      color: var(--mute);
+      margin: 0 auto 10px;
+      max-width: 230px
+    }
+
+    footer {
+      max-width: 1180px;
+      margin: 60px auto 0;
+      padding: 26px 24px 40px;
+      border-top: 1px solid var(--line);
+      color: var(--mute);
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between
+    }
+
+    footer b {
+      color: var(--acc2)
+    }
+
+    #confetti {
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+      pointer-events: none
+    }
+
+    /* responsif */
+    @media(max-width:900px) {
+      header {
+        grid-template-columns: 1fr;
+        padding-top: 44px
+      }
+
+      .poster {
+        max-width: 620px
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr
+      }
+
+      .scorebox {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        text-align: left
+      }
+
+      .ring {
+        margin: 0;
+        width: 100px;
+        height: 100px;
+        flex: none
+      }
+
+      .ring .rv {
+        font-size: 24px
+      }
+    }
+
+    @media(max-width:600px) {
+      section {
+        padding-top: 48px
+      }
+
+      .sec-head {
+        gap: 12px
+      }
+
+      .sec-num {
+        font-size: 46px
+      }
+
+      .card {
+        padding: 17px;
+        border-radius: 18px
+      }
+
+      .sim-top {
+        padding: 14px
+      }
+
+      .sim-screen {
+        margin: 12px
+      }
+
+      .status {
+        margin: 0 12px 12px
+      }
+
+      .panel,
+      .panel.open {
+        margin-left: 0
+      }
+
+      .float-tag {
+        display: none
+      }
+
+      .stats {
+        gap: 16px
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important
+      }
+
+      .reveal {
+        opacity: 1;
+        transform: none
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="progress"></div>
+  <div class="navwrap">
+    <nav id="nav">
+      <div class="brand"><span class="mark">▶</span> SINE<span style="color:var(--acc)">LAB</span></div>
+      <a href="#kasus">Kasus</a>
+      <a href="#p1">1 · Teknik</a>
+      <a href="#p2">2 · Cara</a>
+      <a href="#p3">3 · Tujuan</a>
+      <a href="#p4">4 · Risiko</a>
+      <a href="#video">Video</a>
+      <a href="#rangkum">Rangkuman</a>
+      <button class="theme-btn" id="themeBtn" aria-label="Ganti tema" title="Ganti tema">🌙</button>
+    </nav>
+  </div>
+
+  <header id="kasus">
+    <div class="reveal in">
+      <div class="eyebrow"><i></i> Modul 01 · Sinematografi Film Pendek</div>
+      <h1>Kamera yang <span class="grad">Ikut Berjalan</span> Bikin Adegan Hidup.</h1>
+      <p class="lead">Kamu adalah <b>sutradara</b> film pendek. Rekam adegan seorang siswa menyusuri lorong sekolah
+        menuju kelas — lalu <b>membuka pintunya</b>. Kamera diam terasa kaku. Ada teknik sederhana yang bisa
+        mengubahnya.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#p1">Mulai belajar <span>→</span></a>
+        <a class="btn alt" href="#video">Lihat video pembahasan <span>▣</span></a>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>04</b><span>Pertanyaan</span></div>
+        <div class="stat"><b>02</b><span>Simulasi</span></div>
+        <div class="stat"><b>04</b><span>Kuis interaktif</span></div>
+        <div class="stat"><b>∞</b><span>Ulangi sesuka kamu</span></div>
+      </div>
+    </div>
+    <div class="reveal in" style="position:relative">
+      <div class="poster" aria-label="Ilustrasi kamera mengikuti siswa di lorong">
+        <div class="hall">
+          <div class="plane ceil"></div>
+          <div class="plane left"></div>
+          <div class="plane right"></div>
+          <div class="plane floor"></div>
+          <div class="door"><span>KELAS</span></div>
+          <div class="walker"><i class="head"></i><i class="body"></i><i class="bag"></i><i class="leg l"></i><i
+              class="leg r"></i></div>
+          <div class="camicon"><i class="b"></i><i class="l"></i><i class="r"></i></div>
+          <div class="beam"></div>
+          <div class="grain"></div>
+        </div>
+        <div class="corners"><i></i><i></i><i></i><i></i></div>
+        <div class="hud tl"><span class="rec"></span>REC <span id="herotc">00:00:00</span></div>
+        <div class="hud bl">CAM A · FOLLOW</div>
+        <div class="hud br">TRACKING SHOT</div>
+      </div>
+      <div class="float-tag a">▸ jarak kamera = tetap</div>
+      <div class="float-tag b">▸ penonton ikut berjalan</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- KASUS -->
+    <section id="kasus2" style="padding-top:30px">
+      <div class="card case reveal">
+        <b>🎬 Studi kasus.</b> Saat kamera dipasang diam, hasil rekaman terasa <b>kaku dan kurang dramatis</b>. Penonton
+        hanya “mengintip” dari satu titik. Jawab empat pertanyaan berikut secara berurutan — <b>tebak dulu</b>, baru
+        buka jawabannya.
+      </div>
+    </section>
+
+    <!-- PERTANYAAN 1 -->
+    <section id="p1">
+      <div class="sec-head reveal"><span class="sec-num">01</span>
+        <div>
+          <div class="qchip">Pertanyaan 1</div>
+          <h2>Teknik kamera apa yang paling tepat?</h2>
+          <p>Pikirkan: supaya siswa tetap terlihat sampai ke pintu, kamera sebaiknya diam atau ikut bergerak?</p>
+        </div>
+      </div>
+      <div class="reveal">
+        <button class="btn alt guess" data-reveal="a1">💡 Tebak dulu, lalu lihat jawaban <span>⌄</span></button>
+        <div class="answer" id="a1">
+          <div class="inner">
+            <div class="box"><span class="lbl">Jawaban singkat</span>
+              <b>Tracking shot</b>, khususnya <b>follow shot dari belakang</b> <span class="arrow">→</span> kamera ikut
+              bergerak mengikuti siswa, bukan diam di satu titik.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card sim-card reveal">
+        <div class="sim-top">
+          <div class="title"><i></i> Simulasi · bandingkan dua cara merekam</div>
+          <div class="seg"><button id="m0" class="sel">Kamera diam</button><button id="m1">Tracking shot</button></div>
+        </div>
+        <div class="sim-screen" id="screen1"><canvas id="c1" width="960" height="420"></canvas>
+          <div class="scan"></div>
+        </div>
+        <div class="status s-bad" id="st1"><span class="ico">📹</span><span>Kamera diam: siswa makin menjauh, lalu
+            hilang dari bingkai. Penonton terasa “di luar” adegan.</span></div>
+        <div style="padding:0 18px 18px"><button class="btn sm" id="play1">▶ Putar ulang</button> <span class="hint"
+            style="margin-left:8px">Perhatikan ukuran siswa di layar.</span></div>
+      </div>
+      <div class="card qz reveal" data-q="0"></div>
+    </section>
+
+    <!-- PERTANYAAN 2 -->
+    <section id="p2">
+      <div class="sec-head reveal"><span class="sec-num">02</span>
+        <div>
+          <div class="qchip">Pertanyaan 2</div>
+          <h2>Bagaimana cara melakukannya?</h2>
+          <p>Buka setiap langkah untuk melihat alasannya. Ada tiga alat yang biasa dipakai kameramen.</p>
+        </div>
+      </div>
+      <div class="reveal">
+        <button class="btn alt guess" data-reveal="a2">💡 Tebak dulu, lalu lihat jawaban <span>⌄</span></button>
+        <div class="answer" id="a2">
+          <div class="inner">
+            <div class="box"><span class="lbl">Jawaban singkat</span>
+              Kamera di <b>belakang siswa</b>, digerakkan mengikuti siswa memakai <b>dolly, Steadicam, atau gimbal</b>.
+              Kecepatannya <b>sama dengan langkah siswa</b>.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="timeline reveal" id="steps"></div>
+      <div class="card qz reveal" data-q="1"></div>
+    </section>
+
+    <!-- PERTANYAAN 3 -->
+    <section id="p3">
+      <div class="sec-head reveal"><span class="sec-num">03</span>
+        <div>
+          <div class="qchip">Pertanyaan 3</div>
+          <h2>Apa tujuan pakai teknik ini?</h2>
+          <p>Bandingkan tiga kartu di bawah. Klik kartunya untuk membuka penjelasan.</p>
+        </div>
+      </div>
+      <div class="reveal">
+        <button class="btn alt guess" data-reveal="a3">💡 Tebak dulu, lalu lihat jawaban <span>⌄</span></button>
+        <div class="answer" id="a3">
+          <div class="inner">
+            <div class="box"><span class="lbl">Jawaban singkat</span>
+              Adegan jadi <b>lebih hidup dan dramatis</b>. Penonton diajak <b>ikut berjalan bersama siswa</b> menuju
+              pintu kelas.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid reveal" id="goal"></div>
+      <div class="card qz reveal" data-q="2"></div>
+    </section>
+
+    <!-- PERTANYAAN 4 -->
+    <section id="p4">
+      <div class="sec-head reveal"><span class="sec-num">04</span>
+        <div>
+          <div class="qchip">Pertanyaan 4</div>
+          <h2>Apa risikonya kalau kamera terlalu cepat?</h2>
+          <p>Geser pengatur kecepatan, tekan putar, lalu amati apa yang terjadi pada siswa dan gambar.</p>
+        </div>
+      </div>
+      <div class="reveal">
+        <button class="btn alt guess" data-reveal="a4">💡 Tebak dulu, lalu lihat jawaban <span>⌄</span></button>
+        <div class="answer" id="a4">
+          <div class="inner">
+            <div class="box"><span class="lbl">Jawaban singkat</span>
+              <b>Suasana berubah</b>, <b>gambar bergetar/blur</b>, dan <b>penonton pusing</b>. Kamera juga bisa
+              <b>menyalip siswa</b>. Karena itu kecepatan harus sinkron.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card sim-card reveal">
+        <div class="sim-top">
+          <div class="title"><i></i> Simulasi · atur kecepatan kamera</div><button class="btn sm" id="play4">▶
+            Putar</button>
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-label"><span>Kecepatan kamera</span><b id="spdv">1,00×</b></div>
+          <input type="range" id="spd" min="0.5" max="2" step="0.05" value="1" aria-label="Kecepatan kamera">
+          <div class="scale"><span>← terlalu lambat</span><span>sinkron</span><span>terlalu cepat →</span></div>
+        </div>
+        <div class="sim-screen" id="screen4"><canvas id="c4" width="960" height="420"></canvas>
+          <div class="scan"></div>
+        </div>
+        <div class="status s-ok" id="st4"><span class="ico">✅</span><span>Sinkron: kecepatan kamera sama dengan langkah
+            siswa.</span></div>
+      </div>
+      <div class="grid reveal" id="eff"></div>
+      <div class="card reveal">
+        <b>🔁 Menyalip atau tertinggal?</b>
+        <p class="hint">Kalau kamera lebih cepat, ia menyalip siswa dan tokoh tertinggal di belakang. Kalau lebih
+          lambat, siswa menjauh dan keluar dari bingkai. Dua-duanya membuat efek “mengikuti” hilang. Coba <b>1,5×</b>
+          lalu <b>0,6×</b>.</p>
+      </div>
+      <div class="card qz reveal" data-q="3"></div>
+    </section>
+
+    <!-- VIDEO -->
+    <section id="video">
+      <div class="sec-head reveal"><span class="sec-num">▶</span>
+        <div>
+          <div class="qchip" style="background:linear-gradient(120deg,var(--acc3),var(--acc2))">Video pembahasan</div>
+          <h2>Lihat semuanya dalam satu video</h2>
+          <p>Tempat ini siap untuk video buatanmu. Taruh file <code>video-pembahasan.mp4</code> di folder yang sama
+            dengan file HTML ini, atau langsung pilih video dari komputer untuk mencoba sekarang.</p>
+        </div>
+      </div>
+      <div class="card video-shell reveal">
+        <div class="video-frame" id="vframe">
+          <video id="vid" controls playsinline preload="metadata">
+            <!-- Ganti src di bawah dengan nama file videomu, misalnya:video-pembahasan.mp4 -->
+            <source src="C:\Users\ASUS\Documents\remotion\tracking-shot-video\tracking-shot-video\out\TrackingShot.mp4"
+              type="video/mp4">
+            Browermu tidak mendukung tag video.
+          </video>
+          <div class="vph" id="vph">
+            <div class="vph-in">
+              <div class="play">▶</div>
+              <h3>Video kamu diputar di sini</h3>
+              <p>Pilih file video untuk langsung mencoba. Drag &amp; drop juga bisa. Untuk memasang permanen, ganti
+                <code>src</code> pada tag <code>&lt;source&gt;</code>.
+              </p>
+              <div class="row"><label class="btn" style="cursor:pointer">📂 Pilih video dari komputer<input type="file"
+                    id="vfile" accept="video/*" hidden></label>
+                <button class="btn alt" id="vreset">Kembalikan ke placeholder</button>
+              </div>
+            </div>
+          </div>
+          <div class="drop-hint">Lepaskan video di sini 🎬</div>
+        </div>
+        <div class="chapters">
+          <a href="#p1">① Teknik</a><a href="#p2">② Cara</a><a href="#p3">③ Tujuan</a><a href="#p4">④ Risiko</a><a
+            href="#rangkum">⑤ Rangkuman</a>
+          <button id="fullBtn">⛶ Layar penuh</button>
+        </div>
+        <p class="video-note">Tips: video bisa berisi penjelasan keseluruhan materi. Chapter di atas menautkan kembali
+          ke bagian yang dibahas.</p>
+      </div>
+    </section>
+
+    <!-- RANGKUMAN -->
+    <section id="rangkum">
+      <div class="sec-head reveal"><span class="sec-num">✓</span>
+        <div>
+          <div class="qchip">Penutup</div>
+          <h2>Rangkuman &amp; hasil kuis</h2>
+          <p>Empat poin yang perlu kamu ingat sebagai sutradara.</p>
+        </div>
+      </div>
+      <div class="card reveal summary-grid">
+        <ol class="sum">
+          <li><b>Teknik:</b> tracking shot, follow shot dari belakang.</li>
+          <li><b>Cara:</b> kamera di belakang siswa, pakai dolly / Steadicam / gimbal, kecepatan sama dengan langkah.
+          </li>
+          <li><b>Tujuan:</b> adegan tidak kaku, lebih hidup dan dramatis; penonton ikut berjalan.</li>
+          <li><b>Risiko:</b> suasana berubah, gambar getar/blur, penonton pusing, kamera bisa menyalip siswa.</li>
+        </ol>
+        <div class="scorebox">
+          <div class="ring" id="ring">
+            <div class="rv"><span id="score">0</span><small>/4</small></div>
+          </div>
+          <div id="scoremsg">Jawab keempat kuis untuk melihat hasilmu.</div>
+          <button class="btn alt sm" id="resetAll">↺ Ulangi kuis</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span><b>SINELAB</b> · Modul interaktif teknik pergerakan kamera</span>
+    <span>Tekan titik-titik di navigasi untuk berpindah bagian ⌃</span>
+  </footer>
+
+  <script>
+    (function () {
+      const $ = (s, r) => (r || document).querySelector(s);
+      const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ---------- Progres baca ---------- */
+      const prog = $('#progress');
+      function onScroll() {
+        const h = document.documentElement.scrollHeight - innerHeight;
+        prog.style.transform = 'scaleX(' + (h > 0 ? Math.min(scrollY / h, 1) : 0) + ')';
+        const y = scrollY + 140, ids = ['kasus', 'p1', 'p2', 'p3', 'p4', 'video', 'rangkum'];
+        let cur = 0; ids.forEach((id, i) => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = i });
+        $$('#nav a').forEach((l, i) => l.classList.toggle('on', i === cur));
+      }
+      addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+      /* ---------- Reveal ---------- */
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { threshold: .13 });
+      $$('.reveal').forEach((el, i) => { if (!el.classList.contains('in')) { el.style.setProperty('--d', (i % 4 * 80) + 'ms'); io.observe(el) } });
+
+      /* ---------- Tema ---------- */
+      const tb = $('#themeBtn');
+      try { const t = localStorage.getItem('sinelab-theme'); if (t) document.documentElement.dataset.theme = t } catch (e) { }
+      function setThemeIcon() { tb.textContent = document.documentElement.dataset.theme === 'light' ? '☀️' : '🌙' }
+      setThemeIcon();
+      tb.onclick = () => {
+        const cur = document.documentElement.dataset.theme; const next = cur === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = next; setThemeIcon(); try { localStorage.setItem('sinelab-theme', next) } catch (e) { }
+      };
+
+      /* ---------- Timecode hero ---------- */
+      const tc = $('#herotc'), t0 = performance.now();
+      (function tick() {
+        const s = (performance.now() - t0) / 1000;
+        tc.textContent = '00:' + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+        setTimeout(tick, 250)
+      })();
+
+      /* ---------- Jawaban ---------- */
+      $$('[data-reveal]').forEach(b => b.onclick = () => {
+        const a = document.getElementById(b.dataset.reveal), open = a.classList.toggle('open');
+        b.innerHTML = (open ? '🙈 Sembunyikan jawaban' : '💡 Tebak dulu, lalu lihat jawaban') + ' <span>' + (open ? '⌃' : '⌄') + '</span>';
+        a.setAttribute('aria-expanded', open);
+      });
+
+      /* =========================================================
+         SIMULASI KANVAS PERSPEKTIF
+         ========================================================= */
+      const L = 12, VS = 2, S0 = 1.5, F = 4.2;
+      const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+      function Sim(cv, getK, label, btn) {
+        const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, vY = H * .44, vw = 26;
+        let state = 'idle', t = 0, last = 0, cb = null;
+        const studentZ = () => S0 + Math.min(VS * t, L);
+        function syncBtn() { if (!btn) return; btn.textContent = state === 'run' ? '⏸ Jeda' : state === 'pause' ? '▶ Lanjut' : '▶ Putar ulang' }
+        function at(z) {
+          const cam = getK() * Math.min(VS * t, L), d = z - cam; if (d < .18) return null; const s = F / (d + F);
+          return { d, s, y: vY + (H - vY) * s, half: 2.6 * 64 * s }
+        }
+        function line(x1, y1, x2, y2, c, w) { ctx.strokeStyle = c; ctx.lineWidth = w || 1; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke() }
+        function rr(x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, Math.max(r, 0)); else ctx.rect(x, y, w, h); ctx.fill() }
+        function draw() {
+          const cam = getK() * Math.min(VS * t, L), sz = studentZ(), d = sz - cam;
+          const wall = ctx.createLinearGradient(0, 0, 0, H); wall.addColorStop(0, css('--wall')); wall.addColorStop(1, css('--wall2'));
+          ctx.fillStyle = wall; ctx.fillRect(0, 0, W, H);
+          // dinding & lantai
+          ctx.fillStyle = css('--floor'); ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(W, H); ctx.lineTo(W / 2 + vw, vY); ctx.lineTo(W / 2 - vw, vY); ctx.fill();
+          ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(W, 0); ctx.lineTo(W / 2 + vw, vY); ctx.lineTo(W / 2 - vw, vY); ctx.fill();
+          // garis lantai & locker dari jauh ke dekat
+          const z0 = Math.max(-1, Math.floor(cam / 1.6) * 1.6), z1 = cam + 18;
+          for (let z = z1; z >= z0; z -= 1.6) {
+            const p = at(z); if (!p) continue; const a = .15 + .5 * p.s;
+            line(W / 2 - p.half, p.y, W / 2 + p.half, p.y, 'rgba(255,255,255,' + a.toFixed(2) + ')', 2 * p.s);
+            const lc = at(z + .35); if (lc) {
+              const lh = (vY - (vY - H * .12)) * lc.s, ly = vY - lh, wl = .95 * 64 * lc.s;
+              ctx.fillStyle = css('--locker'); ctx.fillRect(W / 2 - lc.half, ly, wl, lc.y - ly);
+              ctx.fillRect(W / 2 + lc.half - wl, ly, wl, lc.y - ly);
+              ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(W / 2 - lc.half + wl * .25, ly + wl * .18, wl * .5, 4 * lc.s);
+              ctx.fillRect(W / 2 + lc.half - wl * .75, ly + wl * .18, wl * .5, 4 * lc.s);
+            }
+          }
+          // pintu kelas
+          const dr = at(S0 + L);
+          if (dr) {
+            const top = vY - (vY - H * .14) * dr.s, bot = vY + (H * .50) * dr.s, hw = 1.05 * 64 * dr.s;
+            ctx.fillStyle = css('--door'); ctx.fillRect(W / 2 - hw, top, hw * 2, bot - top);
+            ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(W / 2 - hw * .15, top, hw * .3, bot - top);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.max(9, 20 * dr.s) + 'px system-ui'; ctx.textAlign = 'center';
+            ctx.fillText('KELAS', W / 2, top - 8 * dr.s);
+            ctx.strokeStyle = 'rgba(255,209,102,' + (.3 + .6 * dr.s).toFixed(2) + ')'; ctx.lineWidth = 2 * dr.s;
+            ctx.strokeRect(W / 2 - hw, top, hw * 2, bot - top);
+          }
+          // siswa
+          if (d < .18) {
+            ctx.fillStyle = css('--bad'); ctx.font = 'bold 24px system-ui'; ctx.textAlign = 'center';
+            ctx.fillText('⚠ SISWA TERTINGGAL DI BELAKANG KAMERA', W / 2, H * .55);
+          } else if (d > 7.5) {
+            ctx.fillStyle = css('--mute'); ctx.font = 'bold 21px system-ui'; ctx.textAlign = 'center';
+            ctx.fillText('SISWA MAKIN MENJAUH …', W / 2, H * .52);
+          }
+          if (d >= .18) {
+            const s = F / (d + F), foot = vY + (H * .54) * s, h = 120 * s, w = 38 * s, x = W / 2;
+            const moving = sz < S0 + L, bob = moving ? Math.sin(t * 11) * 2.5 * s : 0, swing = moving ? Math.sin(t * 11) * 9 * s : 0;
+            ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, foot + 3 * s, w * .8, 5 * s, 0, 0, 7); ctx.fill();
+            ctx.fillStyle = '#1f2937'; ctx.fillRect(x - w * .32 + swing, foot - 33 * s, w * .28, 33 * s); ctx.fillRect(x + w * .05 - swing, foot - 33 * s, w * .28, 33 * s);
+            ctx.fillStyle = '#1d4ed8'; rr(x - w * .42, foot - 80 * s + bob, w * .84, 50 * s, 7 * s);
+            ctx.fillStyle = '#111827'; rr(x - w * .72, foot - 73 * s + bob, w * .34, 31 * s, 5 * s);
+            ctx.fillStyle = '#f0bd8b'; ctx.beginPath(); ctx.arc(x, foot - 90 * s + bob, 11 * s, 0, 7); ctx.fill();
+            ctx.fillStyle = '#3f2a1c'; ctx.beginPath(); ctx.arc(x, foot - 94 * s + bob, 11 * s, Math.PI, 0); ctx.fill();
+          }
+          // HUD kamera
+          ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+          const m = 14, len = 26;[[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(c => {
+            ctx.beginPath(); ctx.moveTo(c[0] + c[2] * len, c[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(c[0], c[1] + c[3] * len); ctx.stroke()
+          });
+          ctx.textAlign = 'left'; ctx.fillStyle = '#ff4d5e'; ctx.beginPath(); ctx.arc(36, 36, 7, 0, 7); ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 19px ui-monospace,Consolas,monospace';
+          ctx.fillText('REC  00:' + String(Math.floor(t / 60) % 60).padStart(2, '0') + ':' + String(Math.floor(t % 60)).padStart(2, '0'), 52, 43);
+          ctx.fillStyle = '#ffd166'; ctx.font = 'bold 15px ui-monospace,Consolas,monospace'; ctx.fillText(label(), 36, H - 28);
+          ctx.textAlign = 'right'; ctx.fillStyle = '#9fe8ff';
+          const jar = Math.abs(d); ctx.fillText('JARAK KAMERA–SISWA ' + jar.toFixed(1) + ' m', W - 36, H - 28);
+          ctx.textAlign = 'left';
+        }
+        function loop(n) {
+          if (state !== 'run') return; const dt = Math.min((n - last) / 1000, .05); last = n; t += dt; draw();
+          if (t > L / VS + 1.2) { state = 'done'; syncBtn(); cb && cb(); return } requestAnimationFrame(loop)
+        }
+        this.draw = draw;
+        this.play = () => { t = 0; state = 'run'; last = performance.now(); syncBtn(); requestAnimationFrame(loop) };
+        this.toggle = () => { if (state === 'run') { state = 'pause'; syncBtn() } else if (state === 'pause') { state = 'run'; last = performance.now(); syncBtn(); requestAnimationFrame(loop) } else this.play() };
+        this.state = () => state; this.onEnd = f => cb = f; this.setT = v => t = v; draw();
+      }
+
+      /* Sim 1 */
+      let mode = 0;
+      const s1 = new Sim($('#c1'), () => mode, () => mode ? 'TRACKING SHOT · FOLLOW' : 'CAMERA DIAM · STATIC', null);
+      const msg1 = [
+        ['📹', 'Kamera diam: siswa makin menjauh, lalu hilang dari bingkai. Penonton terasa “di luar” adegan.'],
+        ['🎥', 'Tracking shot: jarak kamera–siswa tetap, siswa selalu di bingkai, penonton ikut berjalan.']
+      ];
+      function setMode(m) {
+        mode = m; $('#m0').classList.toggle('sel', m === 0); $('#m1').classList.toggle('sel', m === 1);
+        const st = $('#st1'); st.className = 'status ' + (m ? 's-ok pop' : 's-bad pop'); st.innerHTML = '<span class="ico">' + msg1[m][0] + '</span><span>' + msg1[m][1] + '</span>'; s1.play()
+      }
+      $('#m0').onclick = () => setMode(0); $('#m1').onclick = () => setMode(1);
+      $('#play1').onclick = () => s1.play();
+
+      /* Sim 4 */
+      let k4 = 1, shake = 0;
+      const s4 = new Sim($('#c4'), () => k4, () => k4 > 1.12 ? 'KAMERA TERLALU CEPAT' : k4 < .9 ? 'KAMERA TERLALU LAMBAT' : 'KAMERA SINKRON · STABIL', $('#play4'));
+      $('#play4').onclick = () => s4.toggle();
+      const effs = [
+        { i: '🎬', t: 'Suasana adegan berubah', d: 'Adegan tenang bisa terasa seperti kejar-kejaran, padahal sutradara tidak ingin itu.', hot: k => k > 1.15 },
+        { i: '📳', t: 'Gambar bergetar atau blur', d: 'Kamera yang melaju cepat sulit distabilkan, sehingga gambar goyah dan kabur.', hot: k => k > 1.30 },
+        { i: '😵', t: 'Penonton menjadi pusing', d: 'Gerakan cepat dan tidak stabil membuat mata lelah dan adegan sulit dinikmati.', hot: k => k > 1.50 }
+      ];
+      const ef = $('#eff');
+      effs.forEach(e => {
+        const b = document.createElement('button'); b.className = 'eff';
+        b.innerHTML = '<span class="more">⌄</span><span class="ic">' + e.i + '</span><b>' + e.t + '</b><p class="eff-desc">' + e.d + '</p>';
+        b.onclick = () => b.classList.toggle('open'); ef.appendChild(b); e.el = b
+      });
+      function upd4() {
+        const k = k4; $('#spdv').textContent = k.toFixed(2).replace('.', ',') + '×';
+        const st = $('#st4'), ok = Math.abs(k - 1) <= .08; let ico, tx;
+        if (ok) { ico = '✅'; tx = 'Sinkron: kecepatan kamera sama dengan langkah siswa, gambar stabil dan nyaman.' }
+        else if (k > 1) { ico = '⚠️'; tx = k > 1.3 ? 'Terlalu cepat! Kamera menyalip siswa, gambar bergetar dan penonton bisa pusing.' : 'Mulai tidak sinkron: kamera sedikit lebih cepat dan perlahan menyalip siswa.' }
+        else { ico = '🐢'; tx = 'Terlalu lambat: siswa menjauh dan keluar dari bingkai, efek mengikuti hilang.' }
+        st.className = 'status ' + (ok ? 's-ok pop' : 's-bad pop'); st.innerHTML = '<span class="ico">' + ico + '</span><span>' + tx + '</span>';
+        effs.forEach(e => e.el.classList.toggle('hot', e.hot(k)));
+        const b = k > 1.3 ? Math.min((k - 1.2) * 5, 5) : 0;
+        $('#c4').style.filter = b ? 'blur(' + b.toFixed(1) + 'px) saturate(1.2)' : 'none';
+        shake = b ? b * 1.6 : 0;
+      }
+      (function jit() {
+        const sc = $('#screen4'); if (shake && s4.state() === 'run') sc.style.transform = 'translate(' + ((Math.random() - .5) * shake * 2).toFixed(1) + 'px,' + ((Math.random() - .5) * shake * 2).toFixed(1) + 'px)';
+        else sc.style.transform = 'none'; requestAnimationFrame(jit)
+      })();
+      $('#spd').oninput = function () { k4 = parseFloat(this.value); upd4(); if (s4.state() !== 'run') s4.draw() };
+      upd4();
+
+      /* ---------- Langkah ---------- */
+      const steps = [
+        {
+          t: 'Pilih alat penggerak kamera', b: 'Pilih salah satu alat. Klik namanya untuk melihat ciri-cirinya.', tools: {
+            Dolly: 'Kamera di dudukan beroda (biasanya di rel), meluncur halus di lantai lorong.',
+            Steadicam: 'Penstabil yang dipasang di tubuh kameramen: tetap bisa berjalan, gambar stabil.',
+            Gimbal: 'Penstabil genggam yang meredam goyangan tangan, praktis dibawa berjalan.'
+          },
+          why: 'Kamera digenggam kosong akan ikut goyang. Ketiga alat ini membuat gerakan halus.'
+        },
+        { t: 'Posisikan kamera di belakang siswa', b: 'Taruh kamera tepat di belakang siswa, menghadap lorong dan pintu kelas.', why: 'Inilah follow shot dari belakang. Penonton melihat lorong dan pintu yang makin dekat.' },
+        { t: 'Mulai rekam, gerakkan kamera mengikuti', b: 'Saat siswa melangkah, kamera ikut maju di belakangnya sepanjang lorong.', why: 'Kamera tidak lagi diam; sudut pandang terus berpindah sehingga adegan tidak kaku.' },
+        { t: 'Samakan kecepatan dengan langkah siswa', b: 'Jaga kecepatan kamera agar sama dengan langkah siswa.', why: 'Jika sinkron, jarak tetap dan gambar stabil. Jika tidak, kamera menyalip atau tertinggal.' },
+        { t: 'Akhiri saat siswa membuka pintu kelas', b: 'Teruskan rekaman sampai siswa membuka pintu, lalu adegan selesai.', why: 'Pintu adalah tujuan adegan. Penonton ikut merasakan momen masuk ke kelas.' }
+      ];
+      const sw = $('#steps');
+      steps.forEach((s, i) => {
+        const d = document.createElement('div'), btn = document.createElement('button'); btn.className = 'step'; btn.setAttribute('aria-expanded', 'false');
+        btn.innerHTML = '<span class="n">' + (i + 1) + '</span><span>' + s.t + '</span><span class="chev">›</span>';
+        const p = document.createElement('div'); p.className = 'panel';
+        const inner = document.createElement('div'); inner.className = 'inner';
+        const body = document.createElement('div'); body.className = 'body';
+        let h = '<p style="margin:0 0 8px">' + s.b + '</p>';
+        if (s.tools) h += '<div class="row" style="margin:6px 0">' + Object.keys(s.tools).map(k => '<button class="btn alt sm tl" data-k="' + k + '">' + k + '</button>').join('') + '</div><p class="tt hint" style="margin:4px 0 8px">Pilih salah satu alat di atas.</p>';
+        h += '<p class="why"><b>Mengapa?</b> ' + s.why + '</p>'; body.innerHTML = h; inner.appendChild(body); p.appendChild(inner);
+        btn.onclick = () => { const open = p.classList.toggle('open'); btn.classList.toggle('open', open); btn.setAttribute('aria-expanded', open) };
+        if (s.tools) $$('.tl', p).forEach(t => t.onclick = () => { $$('.tl', p).forEach(x => x.classList.remove('sel')); t.classList.add('sel'); $('.tt', p).textContent = s.tools[t.dataset.k] });
+        d.appendChild(btn); d.appendChild(p); sw.appendChild(d);
+      });
+
+      /* ---------- Kartu tujuan ---------- */
+      const goals = [
+        { i: '🧊', t: 'Kamera diam', d: 'Terasa kaku dan kurang dramatis. Penonton menonton dari satu titik tetap.' },
+        { i: '🎥', t: 'Tracking shot', d: 'Adegan hidup dan dramatis. Penonton ikut berjalan bersama siswa menuju pintu.' },
+        { i: '👀', t: 'Penonton ikut berjalan', d: 'Kamera di belakang siswa membuat penasaran: apa yang ada di balik pintu kelas?' }
+      ];
+      const g = $('#goal');
+      goals.forEach(x => {
+        const b = document.createElement('button'); b.className = 'eff';
+        b.innerHTML = '<span class="more">⌄</span><span class="ic">' + x.i + '</span><b>' + x.t + '</b><p class="eff-desc">' + x.d + '</p>';
+        b.onclick = () => b.classList.toggle('open'); g.appendChild(b)
+      });
+
+      /* ---------- Kuis ---------- */
+      const Q = [
+        {
+          q: 'Kamera diam membuat adegan siswa terasa kaku. Teknik apa yang paling tepat?', o: [
+            ['Tetap pakai kamera diam, siswa disuruh berjalan lebih pelan', 0, 'Kamera tetap diam, jadi rasa kaku tidak hilang. Masalahnya ada pada kameranya.'],
+            ['Tracking shot jenis follow shot dari belakang', 1, 'Benar! Kamera ikut bergerak dari belakang sehingga adegan terasa hidup dan dramatis.'],
+            ['Kamera di dalam kelas merekam siswa yang datang', 0, 'Kamera masih diam, dan tidak mengikuti siswa dari belakang seperti rencana sutradara.']]
+        },
+        {
+          q: 'Ingin hasil rekaman stabil saat mengikuti siswa. Cara mana yang paling tepat?', o: [
+            ['Kameramen berlari memegang kamera tanpa alat bantu', 0, 'Tanpa alat, kamera ikut goyang — apalagi saat berlari. Gambar jadi bergetar.'],
+            ['Dolly, Steadicam, atau gimbal, kecepatan sama dengan langkah siswa', 1, 'Benar! Alat meredam goyangan dan kecepatan yang sama menjaga jarak tetap.'],
+            ['Kamera di depan siswa, mundur secepat mungkin', 0, 'Materi meminta kamera di belakang, dan “secepat mungkin” tidak sinkron dengan langkah.']]
+        },
+        {
+          q: 'Apa tujuan utama tracking shot pada adegan ini?', o: [
+            ['Agar adegan lebih cepat selesai', 0, 'Bukan mempercepat adegan, tapi membuatnya lebih hidup dan dramatis.'],
+            ['Penonton ikut berjalan dan adegan tidak kaku', 1, 'Benar! Kamera yang bergerak mengajak penonton merasakan perjalanan siswa.'],
+            ['Wajah siswa terlihat jelas sepanjang adegan', 0, 'Kamera ada di belakang siswa, jadi wajah tidak terlihat. Yang dibangun adalah rasa mengikuti.']]
+        },
+        {
+          q: 'Kamera jauh lebih cepat daripada langkah siswa. Apa yang paling mungkin terjadi?', o: [
+            ['Gambar makin stabil karena kamera bergerak mantap', 0, 'Justru sebaliknya — gerakan terlalu cepat membuat gambar bergetar atau blur.'],
+            ['Kamera menyalip siswa, gambar getar/blur, penonton bisa pusing', 1, 'Benar! Kamera tidak sinkron, tokoh tertinggal, dan adegan jadi terganggu.'],
+            ['Tidak ada pengaruh karena penonton hanya melihat siswa', 0, 'Ada pengarnya: suasana berubah, gambar terganggu, penonton bisa pusing.']]
+        }
+      ];
+      const done = {}; let celebrated = false;
+      function score() {
+        const n = Object.values(done).filter(Boolean).length, c = Object.keys(done).length;
+        $('#score').textContent = n; $('#ring').style.setProperty('--p', n * 25);
+        $('#scoremsg').textContent = c < 4 ? 'Kamu sudah menjawab ' + c + ' dari 4 kuis.' :
+          n === 4 ? 'Sempurna! Kamu paham alasan tiap jawaban 🎉' : 'Coba ulangi kuis yang salah dan bandingkan dengan simulasi.';
+        if (n === 4 && c === 4 && !celebrated) { celebrated = true; if (!reduce) confetti() }
+      }
+      function render(box) {
+        const i = +box.dataset.q, d = Q[i];
+        box.innerHTML = '<div class="tag">Kuis ' + (i + 1) + ' dari 4</div><h3>' + d.q + '</h3>';
+        const fb = document.createElement('div');
+        d.o.forEach((o, j) => {
+          const b = document.createElement('button'); b.className = 'opt'; b.style.animationDelay = (j * 70) + 'ms';
+          b.innerHTML = '<span class="key">' + 'ABC'[j] + '</span><span>' + o[0] + '</span>';
+          b.onclick = () => {
+            $$('.opt', box).forEach(x => x.disabled = true); b.classList.add(o[1] ? 'right' : 'wrong');
+            if (!o[1]) $$('.opt', box).forEach((x, k) => { if (d.o[k][1]) x.classList.add('right') });
+            fb.className = 'fb ' + (o[1] ? 'right' : 'wrong');
+            fb.innerHTML = (o[1] ? '✅ ' : '❌ ') + o[2];
+            if (!o[1]) fb.innerHTML += '<br><b>Jawaban benar:</b> ' + d.o.filter(x => x[1])[0][2].replace('Benar! ', '');
+            const r = document.createElement('button'); r.className = 'btn alt sm'; r.style.marginTop = '10px'; r.textContent = '↺ Coba lagi';
+            r.onclick = () => { delete done[i]; render(box); score() };
+            box.appendChild(r); done[i] = !!o[1]; score();
+          };
+          box.appendChild(b);
+        });
+        box.appendChild(fb);
+      }
+      $$('.qz').forEach(render);
+      $('#resetAll').onclick = () => { Object.keys(done).forEach(k => delete done[k]); celebrated = false; $$('.qz').forEach(render); score() };
+
+      /* ---------- Konfeti ---------- */
+      function confetti() {
+        let old = $('#confetti'); if (old) old.remove();
+        const cv = document.createElement('canvas'); cv.id = 'confetti'; cv.width = innerWidth; cv.height = innerHeight; document.body.appendChild(cv);
+        const c = cv.getContext('2d'), cols = ['#ff8a3d', '#ffd166', '#48d6ff', '#4ade80', '#fb7185'], p = [];
+        for (let i = 0; i < 110; i++)p.push({
+          x: innerWidth * (.2 + Math.random() * .6), y: innerHeight * .35, vx: (Math.random() - .5) * 9, vy: -Math.random() * 9 - 3,
+          r: 3 + Math.random() * 5, c: cols[i % cols.length], rot: Math.random() * 6, spin: (Math.random() - .5) * .3
+        });
+        let f = 0; (function step() {
+          c.clearRect(0, 0, cv.width, cv.height); p.forEach(q => {
+            q.x += q.vx; q.y += q.vy; q.vy += .24; q.rot += q.spin;
+            c.save(); c.translate(q.x, q.y); c.rotate(q.rot); c.fillStyle = q.c; c.fillRect(-q.r, -q.r / 2, q.r * 2, q.r); c.restore()
+          });
+          if (++f < 150) requestAnimationFrame(step); else cv.remove()
+        })();
+      }
+
+      /* ---------- Video ---------- */
+      const frame = $('#vframe'), vid = $('#vid'), vph = $('#vph'), vfile = $('#vfile'), fullBtn = $('#fullBtn');
+      let objectUrl = null;
+      function showVideo() { frame.classList.add('has-video') }
+      function showPlaceholder() { frame.classList.remove('has-video') }
+      vid.addEventListener('loadeddata', showVideo);
+      vid.addEventListener('error', () => { if (!vid.currentSrc || !objectUrl) showPlaceholder() });
+      function loadFile(file) {
+        if (!file || !file.type.startsWith('video/')) return;
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = URL.createObjectURL(file);
+        vid.src = objectUrl; vid.load(); showVideo(); vid.play().catch(() => { });
+      }
+      vfile.onchange = e => loadFile(e.target.files[0]);
+      $('#vreset').onclick = () => { if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null } vid.pause(); vid.removeAttribute('src'); vid.load(); showPlaceholder(); vfile.value = '' };
+      ['dragenter', 'dragover'].forEach(ev => frame.addEventListener(ev, e => { e.preventDefault(); frame.classList.add('drag') }));
+      ['dragleave', 'drop'].forEach(ev => frame.addEventListener(ev, e => { e.preventDefault(); frame.classList.remove('drag') }));
+      frame.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
+      fullBtn.onclick = () => {
+        const el = vid.requestFullscreen ? vid : frame;
+        if (!document.fullscreenElement) (el.requestFullscreen || el.webkitRequestFullscreen || (() => { })).call(el);
+        else document.exitFullscreen && document.exitFullscreen()
+      };
+    })();
+  </script>
+</body>
+
+</html>
